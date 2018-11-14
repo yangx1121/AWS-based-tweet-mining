@@ -54,28 +54,17 @@ The example queries for the SQL like this:
 Beside, we also executed more complex queries like: What are the most popular sets of hashtags among users with many followers? Are they the same as among users with few followers? For answering this, we need to decide for ourselves exactly how many followers we believe to be "many". So I used queries .describe("user.followers_count") to show the mean, sd, min and max of user followers and used statistics query percentile_approx() to finally determine that >5000 as ''many'' and <152 as “fewer”. Then the SQL queries to find hashtags were like this:
 
         sqlc.sql("SELECT DISTINCT hashtag.text AS hashtag, COUNT(*) AS count \
-
-        FROM tweets \
-
-        LATERAL VIEW OUTER explode(entities.hashtags) hashtagsTable AS hashtag \
-
-        WHERE (user.followers_count > 5000 AND hashtag is not null) \
-
-        GROUP BY hashtag \
-
-        ORDER BY count DESC").show(20)
-
-        
+                  FROM tweets \
+                  LATERAL VIEW OUTER explode(entities.hashtags) hashtagsTable AS hashtag \
+                  WHERE (user.followers_count > 5000 AND hashtag is not null) \
+                  ROUP BY hashtag \
+                  ORDER BY count DESC").show(20)
+   
         sqlc.sql("SELECT DISTINCT hashtag.text AS hashtag, COUNT(*) AS count \
-
         FROM tweets \
-
         LATERAL VIEW OUTER explode(entities.hashtags) hashtagsTable AS hashtag \
-
         WHERE (user.followers_count <= 152 AND hashtag is not null) \
-
         GROUP BY hashtag \
-
         ORDER BY count DESC").show(20)
 
 * Next, most common words:
@@ -87,14 +76,10 @@ To keep the result more meaningful, I at first added a filter that could remove 
         wordss = ['rt', 'the', 'in', 'a', 'to', 'of','is','i','and','this','for','it']
 
         tweets.rdd.flatMap(lambda r: r['text'].lower().split(' ')) \
-
-    .filter(lambda t: t and t not in wordss) \
-
-    .map(lambda t: (t, 1)) \
-
-    .reduceByKey(lambda a, b: a + b) \
-
-    .takeOrdered(10, key=lambda pair: -pair[1])
+                .filter(lambda t: t and t not in wordss) \
+                .map(lambda t: (t, 1)) \
+                .reduceByKey(lambda a, b: a + b) \
+                .takeOrdered(10, key=lambda pair: -pair[1])
     
 Then we used SQL queries and MapReduce piplines to find patterns among how those words are used. For example, are they more frequently used by Dodgers or Astros fans, or by people in one part of the country over another? 
 
