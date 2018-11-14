@@ -17,13 +17,39 @@ The important pieces should be noticed for data are: 1) It tracked tweets that m
 
 Then, I used shell command to change the file name and used python code to look through the file content. We found there were several key elements in this example: the text, time, and language of the tweet, whether it was a reply to another user, the user's screen name along with their primary language and other account information like creation date, follower/friend/tweet counts, and perhaps their location.
 
+The code executed like this:
+        
+        !wget https://s3.amazonaws.com/2017-dmfa/project-3/9670f3399f774789b7c3e18975d25611_003.json
+        
+        !cat *.json | shuf -n 1 > example-tweet.json
+        
+        import json
+        print(json.dumps(json.load(open("example-tweet.json")), indent=2))
+        
 * Secondly, start up Spark:
 
 Read json by using .printschema() and verify that Spark has loaded the same number of tweets you saw before.
 
+The code should be like this:
+
+        tweets = sqlc.read.json("9670f3399f774789b7c3e18975d25611_*.json")
+        tweets.printSchema()
+        
+        !wc -l 9670f3399f774789b7c3e18975d25611_*.json
+        tweets.count()
+
 * Then, the next step was data exploration. 
 
 Note in this step, we executed each question with both the dataframe and SQL. For the dataframe, I used groupBy, count, and orderBy. For SQL, I used SELECT, COUNT, AS, FROM, WHERE, MAX, MIN, GROUP BY, LIKE, ORDER BY, DESC and show(), count() and wildcards. Some questions were like that: 1)Which 10 languages are most commonly used in tweets? 2)Which 10 time zones are most common among users? 3)How many tweets mention the Dodgers? How many mention the Astros? How many mention both? 4)In which users' locations are the Astros and the Dodgers being mentioned the most? 5)Which Twitter users are being replied to the most?
+
+The example queries for the dataframe like this:
+
+        tweets.groupBy("user.time_zone").count().orderBy("count", ascending=False).show(10, False)
+        
+The example queries for the SQL like this:
+ 
+        sqlc.sql("SELECT user.time_zone, COUNT(*) AS count FROM tweets GROUP BY time_zone ORDER by count DESC").show(10, False)
+        
 
 Beside, we also executed more complex queries like: What are the most popular sets of hashtags among users with many followers? Are they the same as among users with few followers? For answering this, we need to decide for ourselves exactly how many followers we believe to be "many". So I used queries .describe("user.followers_count") to show the mean, sd, min and max of user followers and used statistics query percentile_approx() to finally determine that >5000 as ''many'' and <152 as “fewer”. Then the SQL queries to find hashtags were like this:
 
